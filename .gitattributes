@@ -1,0 +1,12 @@
+# Language detection overrides for GitHub Linguist
+# .m2 files are Grammatical Error Correction (GEC) evaluation datasets (ERRANT / MaxMatch), not Macaulay2 code
+*.m2 linguist-detectable=false
+*.m2 linguist-vendored=true
+*.m2 linguist-documentation=true
+
+# Ignore benchmark datasets and downloads from repository language statistics
+data/** linguist-vendored=true
+data/** linguist-detectable=false
+
+# Ignore bundled build output from language statistics
+frontend/dist/** linguist-vendored=true
