@@ -1,0 +1,17 @@
+{
+  "homophones": [
+    {"pair": ["their", "there", "they're"], "category": "R:SPELL"},
+    {"pair": ["its", "it's"], "category": "R:SPELL"},
+    {"pair": ["your", "you're"], "category": "R:SPELL"},
+    {"pair": ["whose", "who's"], "category": "R:SPELL"}
+  ],
+  "confusables": [
+    {"pair": ["affect", "effect"], "category": "R:OTHER", "rule": "Verb vs Noun Confusion"},
+    {"pair": ["principal", "principle"], "category": "R:OTHER", "rule": "Head vs Fundamental Truth"},
+    {"pair": ["complement", "compliment"], "category": "R:OTHER", "rule": "Completing vs Praise"},
+    {"pair": ["discrete", "discreet"], "category": "R:OTHER", "rule": "Distinct vs Prudent"}
+  ],
+  "uncountable_nouns": [
+    "information", "furniture", "advice", "homework", "luggage", "equipment", "evidence", "knowledge"
+  ]
+}
