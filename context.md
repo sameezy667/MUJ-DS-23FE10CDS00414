@@ -180,7 +180,7 @@ orto/
 - [x] Stylometry & Naturalness Engine (`orto/style/*`)
 - [x] AI Humanizer & De-Cliché Endpoint (`/api/v1/style/humanize`)
 - [x] CLI Runner with `--style` flag (`orto/cli.py`)
-- [x] Unit & Integration Test Suite (`tests/*`) (54/54 tests passing)
+- [x] Unit & Integration Test Suite (`tests/*`) (55/55 tests passing)
 - [x] Official ERRANT M2 Benchmark Suite & Ablation Runner (`benchmarks/evaluate.py`, `benchmarks/run_ablations.py`)
 - [x] Labelled Datasets (`data/bea19_dev_sample.m2`, `data/conll14_test_sample.m2`, `data/sample_benchmark.jsonl`)
 - [x] Trained Model Weights (`data/models/ngram_bigram.json`, `data/models/edit_router.joblib`)
@@ -215,5 +215,6 @@ orto/
   - $\tau=0.45$: $P=46.67\%, R=13.23\%, F_{0.5}=31.00\%$ (Optimal $F_{0.5}$ balance on dev slice)
   - $\tau=0.80$: $P=59.38\%, R=3.59\%, F_{0.5}=14.46\%$ (Ultra High Precision)
 - **Dialectal Variation Analysis:** 15/150 sentences in BEA-19 dev contain British English orthography (`centre`, `programme`, `colour`, `travelling`) where LLM standardizes to US English.
-- **Unit & Integration Tests:** 54/54 passing (`.venv/bin/pytest tests/`).
+- **Unit & Integration Tests:** 55/55 passing (`.venv/bin/pytest tests/`).
+
 
