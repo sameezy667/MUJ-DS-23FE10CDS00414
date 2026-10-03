@@ -80,8 +80,11 @@ class StyleAnalyzer:
         # 4. Passive & Nominalization Density
         passive_ratio, nominal_ratio = compute_passive_and_nominalization(doc)
 
-        # 5. Syntactic Opening Variety
+        # 5. Syntactic Opening Variety & Copula Ratio
         opening_variety = compute_opening_variety(doc)
+        verb_tokens = [t for t in doc if t.pos_ in ("VERB", "AUX")]
+        copula_count = sum(1 for t in verb_tokens if t.lemma_ == "be" and t.dep_ in ("ROOT", "cop"))
+        copula_ratio = (copula_count / len(verb_tokens)) if verb_tokens else 0.0
 
         # 6. Naturalness Grade
         grade = compute_naturalness_grade(
@@ -89,6 +92,7 @@ class StyleAnalyzer:
             cliche_count=cliche_count,
             passive_ratio=passive_ratio,
             opening_variety=opening_variety,
+            copula_ratio=copula_ratio,
         )
 
         # Generate human-readable summary
@@ -97,11 +101,11 @@ class StyleAnalyzer:
             summary_parts.append("Text exhibits organic human cadence with healthy burstiness.")
         elif grade == "Monotonous":
             summary_parts.append(
-                f"Sentence length rhythm is uniform (Burstiness B={burstiness:.2f} < 0.30). Consider varying sentence lengths."
+                f"Sentence length rhythm is uniform (Burstiness B={burstiness:.2f} < 0.35). Consider varying sentence lengths."
             )
         else:
             summary_parts.append(
-                f"Detected {cliche_count} synthetic lexical markers and rigid transitions."
+                f"Detected {cliche_count} synthetic lexical markers and formulaic AI constructions."
             )
 
         if passive_ratio > 0.35:
@@ -151,7 +155,7 @@ class StyleAnalyzer:
         """Provides direct organic replacements for common AI marker tokens."""
         mapping = {
             "delve": "explore",
-            "tapestry": "variety",
+            "tapestry": "landscape",
             "beacon": "guide",
             "pivotal": "key",
             "underscores": "highlights",
@@ -165,6 +169,30 @@ class StyleAnalyzer:
             "it is crucial to": "we must",
             "multifaceted": "complex",
             "paramount": "essential",
+            "by construction": "by design",
+            "gates on": "filters on",
+            "fabricated number": "an arbitrary number" if original.lower().startswith("a ") else "arbitrary number",
+            "surface that instead": "highlight that instead",
+            "is defined by": "depends on",
+            "plethora": "many",
+            "nuanced": "subtle",
+            "interplay": "dynamic",
+            "seamlessly": "smoothly",
+            "ever-evolving": "changing",
+            "at the forefront": "leading",
+            "pave the way": "enable",
+            "shed light on": "clarify",
+            "harnessing": "using",
+            "holistic": "integrated",
+            "deep dive": "close look",
+            "realm of": "field of",
+            "serves as a": "is a",
+            "not only ... but also": "both ... and",
+            "in essence": "essentially",
+            "embark": "begin",
+            "align with": "match",
+            "spearhead": "lead",
+            "synergy": "collaboration",
         }
         sub = mapping.get(marker_name.lower(), "rephrase")
         if original.istitle():

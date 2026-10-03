@@ -4,8 +4,8 @@
  * @module frontend/src/components
  */
 
-import React, { useState } from 'react';
-import { ShieldAlert, Wand2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, ShieldAlert, Wand2 } from 'lucide-react';
 import type { StyleAnalysisResult } from '../types';
 
 export const StylometrySection: React.FC = () => {
@@ -31,6 +31,33 @@ export const StylometrySection: React.FC = () => {
     },
   ];
 
+  // Real-time debounced stylometric evaluation
+  useEffect(() => {
+    const text = inputText.trim();
+    if (!text) {
+      setStyleReport(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/v1/style/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStyleReport(data);
+        }
+      } catch {
+        // Silent fallback
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [inputText]);
+
   const handleRunHumanizer = async (textToRun?: string) => {
     const text = (textToRun !== undefined ? textToRun : inputText).trim();
     if (!text) return;
@@ -54,6 +81,11 @@ export const StylometrySection: React.FC = () => {
           .replace(/\brich tapestry of\b/gi, 'landscape of')
           .replace(/\bserves as a testament to\b/gi, 'demonstrates')
           .replace(/\bplays a pivotal role in\b/gi, 'is essential for')
+          .replace(/\bis defined by\b/gi, 'depends on')
+          .replace(/\bby construction\b/gi, 'by design')
+          .replace(/\bgates on\b/gi, 'filters on')
+          .replace(/\bfabricated number\b/gi, 'an arbitrary number')
+          .replace(/\bsurface that instead\b/gi, 'highlight that instead')
           .replace(/\bseamless\b/gi, 'smooth');
         setHumanizedResult(decliched);
       }
@@ -63,11 +95,32 @@ export const StylometrySection: React.FC = () => {
         .replace(/\brich tapestry of\b/gi, 'landscape of')
         .replace(/\bserves as a testament to\b/gi, 'demonstrates')
         .replace(/\bplays a pivotal role in\b/gi, 'is essential for')
+        .replace(/\bis defined by\b/gi, 'depends on')
+        .replace(/\bby construction\b/gi, 'by design')
+        .replace(/\bgates on\b/gi, 'filters on')
+        .replace(/\bfabricated number\b/gi, 'an arbitrary number')
+        .replace(/\bsurface that instead\b/gi, 'highlight that instead')
         .replace(/\bseamless\b/gi, 'smooth');
       setHumanizedResult(decliched);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const burstiness = styleReport?.report.burstiness_score ?? 0.18;
+  const grade = styleReport?.report.naturalness_grade ?? 'Evaluating…';
+  const clicheCount = styleReport?.report.cliche_count ?? 0;
+
+  const getBurstinessColor = (b: number) => {
+    if (b >= 0.45) return 'var(--green)';
+    if (b >= 0.30) return '#e5a00d';
+    return 'var(--red)';
+  };
+
+  const getGradeColor = (g: string) => {
+    if (g === 'Natural') return 'var(--green)';
+    if (g === 'Monotonous') return '#e5a00d';
+    return 'var(--red)';
   };
 
   return (
@@ -90,7 +143,7 @@ export const StylometrySection: React.FC = () => {
           </h2>
           <p className="sec-lede" data-rv style={{ '--d': '0.1s' } as React.CSSProperties}>
             Beyond grammatical mechanics, Orto evaluates stylometric naturalness — quantifying
-            sentence length burstiness $B = \sigma / \mu$, flagging synthetic cliché clusters, and
+            sentence length burstiness (B = σ / μ), flagging synthetic cliché clusters, and
             surgically re-rhythming text without altering meaning.
           </p>
 
@@ -148,11 +201,13 @@ export const StylometrySection: React.FC = () => {
                     fontSize: '9px',
                     letterSpacing: '0.16em',
                     color: 'var(--green)',
-                    display: 'block',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                     marginBottom: '6px',
                   }}
                 >
-                  RE-RHYTHMED HUMANIZED OUTPUT
+                  <Sparkles size={12} /> RE-RHYTHMED HUMANIZED OUTPUT
                 </span>
                 <p
                   style={{
@@ -187,21 +242,16 @@ export const StylometrySection: React.FC = () => {
                     textTransform: 'uppercase',
                   }}
                 >
-                  Burstiness ($B = \sigma / \mu$)
+                  Burstiness (B = σ / μ)
                 </span>
                 <b
                   style={{
                     fontFamily: 'var(--mono)',
                     fontSize: '22px',
-                    color:
-                      (styleReport?.report.burstiness_score || 0.15) > 0.4
-                        ? 'var(--green)'
-                        : 'var(--red)',
+                    color: getBurstinessColor(burstiness),
                   }}
                 >
-                  {styleReport
-                    ? styleReport.report.burstiness_score.toFixed(2)
-                    : '0.18'}
+                  {styleReport ? burstiness.toFixed(2) : '0.18'}
                 </b>
               </div>
 
@@ -222,13 +272,10 @@ export const StylometrySection: React.FC = () => {
                   style={{
                     fontFamily: 'var(--mono)',
                     fontSize: '18px',
-                    color:
-                      styleReport?.report.naturalness_grade === 'Natural'
-                        ? 'var(--green)'
-                        : 'var(--red)',
+                    color: getGradeColor(grade),
                   }}
                 >
-                  {styleReport?.report.naturalness_grade || 'Monotonous / Synthetic'}
+                  {styleReport ? styleReport.report.naturalness_grade : 'Evaluating…'}
                 </b>
               </div>
 
@@ -275,11 +322,10 @@ export const StylometrySection: React.FC = () => {
                   style={{
                     fontFamily: 'var(--mono)',
                     fontSize: '18px',
-                    color:
-                      (styleReport?.report.cliche_count || 0) > 0 ? '#e8706f' : '#6fd4a8',
+                    color: clicheCount > 0 ? '#e8706f' : '#6fd4a8',
                   }}
                 >
-                  {styleReport?.report.cliche_count || 0} markers
+                  {clicheCount} markers
                 </b>
               </div>
             </div>
@@ -298,11 +344,13 @@ export const StylometrySection: React.FC = () => {
                   >
                     SYNTHETIC MARKERS DETECTED:
                   </span>
-                  {styleReport.report.detected_markers.map((c) => (
-                    <span className="cliche-badge" key={c}>
-                      <ShieldAlert size={11} /> {c}
-                    </span>
-                  ))}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {styleReport.report.detected_markers.map((c) => (
+                      <span className="cliche-badge" key={c}>
+                        <ShieldAlert size={11} /> {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
           </div>
@@ -311,8 +359,8 @@ export const StylometrySection: React.FC = () => {
             <code>Burstiness B = StandardDeviation(SentenceLengths) / Mean(SentenceLengths)</code>
             <p>
               Natural human writing exhibits high variance in sentence length — rapid punchy
-              sentences mixed with periodic structures ($B &gt; 0.5$). Synthetic LLM text
-              clusters unnaturally around uniform lengths ($B &lt; 0.25$).
+              sentences mixed with periodic structures (B &gt; 0.45). Synthetic LLM text
+              clusters unnaturally around uniform lengths (B &lt; 0.30) and overuses rigid tropes.
             </p>
           </div>
         </div>

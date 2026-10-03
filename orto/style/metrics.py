@@ -18,7 +18,7 @@ LLM_MARKER_PATTERNS: List[Tuple[str, str, str]] = [
         "Overused LLM transition. Prefer 'explore', 'examine', or 'investigate'.",
     ),
     (
-        r"\b(?:rich\s+)?tapestry\b",
+        r"\b(?:rich\s+)?tapestry(?:\s+of)?\b",
         "tapestry",
         "Common synthetic metaphor. Prefer 'blend', 'network', 'variety', or specific nouns.",
     ),
@@ -78,7 +78,7 @@ LLM_MARKER_PATTERNS: List[Tuple[str, str, str]] = [
         "Generic synthetic introductory cliché.",
     ),
     (
-        r"\bit\s+is\s+crucial\s+to\b",
+        r"\bit\s+is\s+(?:crucial|essential|imperative|important)\s+to\b",
         "it is crucial to",
         "Preachy impersonal construction. Prefer direct imperatives or 'we must'.",
     ),
@@ -91,6 +91,126 @@ LLM_MARKER_PATTERNS: List[Tuple[str, str, str]] = [
         r"\bparamount\b",
         "paramount",
         "Overwrought intensifier. Prefer 'top priority', 'vital', or 'essential'.",
+    ),
+    (
+        r"\bby\s+construction\b",
+        "by construction",
+        "Formulaic academic/LLM jargon. Prefer 'by design', 'inherently', or direct phrasing.",
+    ),
+    (
+        r"\bgates\s+on\b",
+        "gates on",
+        "Synthetic filter idiom. Prefer 'filters on', 'depends on', or 'triggers on'.",
+    ),
+    (
+        r"\b(?:a\s+)?fabricated\s+(?:number|metric|data)\b",
+        "fabricated number",
+        "Synthetic critique trope. Prefer 'an arbitrary value' or 'synthetic metric'.",
+    ),
+    (
+        r"\bsurface\s+that(?:\s+instead)?\b",
+        "surface that instead",
+        "Corporate/LLM conversational cliché. Prefer 'highlight that', 'show that', or 'address that'.",
+    ),
+    (
+        r"\bis\s+defined\s+by\b",
+        "is defined by",
+        "Stiff copula definition pattern. Prefer active verbs (e.g. 'depends on', 'derives from').",
+    ),
+    (
+        r"\bplethora(?:\s+of)?\b",
+        "plethora",
+        "Overused pseudo-intellectual trope. Prefer 'many', 'variety', or 'abundance'.",
+    ),
+    (
+        r"\bnuanced\b",
+        "nuanced",
+        "Vague synthetic praise. Prefer specific descriptors.",
+    ),
+    (
+        r"\b(?:intricate\s+)?interplay(?:\s+between)?\b",
+        "interplay",
+        "Repetitive LLM analytical filler. Prefer 'dynamic', 'interaction', or 'relationship'.",
+    ),
+    (
+        r"\bseamlessly\b",
+        "seamlessly",
+        "Synthetic corporate marketing trope. Prefer 'smoothly' or describe the actual process.",
+    ),
+    (
+        r"\bever-evolving\b",
+        "ever-evolving",
+        "Triteness marker. Prefer 'changing' or 'dynamic'.",
+    ),
+    (
+        r"\bat\s+the\s+forefront\s+of\b",
+        "at the forefront",
+        "Inflated introductory cliché. Prefer 'leading' or 'pioneering'.",
+    ),
+    (
+        r"\bpave\s+the\s+way(?:\s+for)?\b",
+        "pave the way",
+        "Overused journalistic idiom. Prefer 'enable', 'allow', or 'lead to'.",
+    ),
+    (
+        r"\bshed(?:\s+some)?\s+light\s+on\b",
+        "shed light on",
+        "Formulaic idiom. Prefer 'clarify', 'explain', or 'illuminate'.",
+    ),
+    (
+        r"\bharnessing(?:\s+the\s+power\s+of)?\b",
+        "harnessing",
+        "Buzzword filler. Prefer 'using', 'applying', or active phrasing.",
+    ),
+    (
+        r"\bholistic(?:\s+approach)?\b",
+        "holistic",
+        "Corporate/LLM buzzword. Prefer 'comprehensive', 'integrated', or 'complete'.",
+    ),
+    (
+        r"\bdeep\s+dive\b",
+        "deep dive",
+        "Overused business jargon. Prefer 'thorough analysis', 'detailed examination', or 'study'.",
+    ),
+    (
+        r"\brealm\s+of\b",
+        "realm of",
+        "Stilted synthetic metaphor. Prefer 'field of', 'domain of', or omit.",
+    ),
+    (
+        r"\bserves\s+as\s+a\b",
+        "serves as a",
+        "Indirect weak predication. Prefer 'is a' or direct action verb.",
+    ),
+    (
+        r"\bnot\s+only\b[\w\s]{2,40}\bbut\s+also\b",
+        "not only ... but also",
+        "Formulaic balanced sentence structure overproduced by LLMs. Prefer direct conjunctions.",
+    ),
+    (
+        r"\bin\s+essence\b",
+        "in essence",
+        "Synthetic summarizing marker. Prefer 'essentially' or state the core point directly.",
+    ),
+    (
+        r"\bembark(?:\s+on)?\b",
+        "embark",
+        "Melodramatic synthetic verb. Prefer 'begin', 'start', or 'pursue'.",
+    ),
+    (
+        r"\balign\s+with\b",
+        "align with",
+        "Corporate/AI buzzword. Prefer 'match', 'agree with', or 'support'.",
+    ),
+    (
+        r"\bspearhead\b",
+        "spearhead",
+        "Cliché managerial verb. Prefer 'lead' or 'direct'.",
+    ),
+    (
+        r"\bsynergy\b",
+        "synergy",
+        "Tired corporate trope. Prefer 'collaboration' or 'cooperation'.",
     ),
 ]
 
@@ -235,6 +355,7 @@ def compute_naturalness_grade(
     cliche_count: int,
     passive_ratio: float,
     opening_variety: float,
+    copula_ratio: float = 0.0,
 ) -> Literal["Natural", "Monotonous", "Heavily Synthetic"]:
     """
     Determines qualitative naturalness grade from quantitative stylometric indices.
@@ -244,12 +365,13 @@ def compute_naturalness_grade(
         cliche_count: Total detected AI markers.
         passive_ratio: Density of passive constructions.
         opening_variety: Syntactic opening variety ratio.
+        copula_ratio: Ratio of repetitive copular predications.
 
     Returns:
         "Natural", "Monotonous", or "Heavily Synthetic".
     """
-    if cliche_count >= 2 or (burstiness < 0.25 and cliche_count >= 1):
+    if cliche_count >= 1 or copula_ratio > 0.40:
         return "Heavily Synthetic"
-    if burstiness < 0.30 or opening_variety < 0.50:
+    if burstiness < 0.35 or opening_variety < 0.55 or passive_ratio > 0.35:
         return "Monotonous"
     return "Natural"

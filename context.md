@@ -177,10 +177,10 @@ orto/
 - [x] Dynamic Few-Shot Exemplar Retriever (`orto/fewshot/bank.py`, `orto/fewshot/retriever.py`)
 - [x] ML Confidence Classifier & Router (`orto/ml/features.py`, `orto/ml/router.py`, `orto/ml/train_router.py`)
 - [x] Pipeline Orchestrator with ML/LM hooks (`orto/pipeline.py`)
-- [x] Stylometry & Naturalness Engine (`orto/style/*`)
+- [x] Stylometry & Naturalness Engine (`orto/style/*`) — Expanded 40+ synthetic AI markers, copula predication ratio, real-time debounced React studio, and LLM-augmented / rule-based cadence re-rhythmer
 - [x] AI Humanizer & De-Cliché Endpoint (`/api/v1/style/humanize`)
 - [x] CLI Runner with `--style` flag (`orto/cli.py`)
-- [x] Unit & Integration Test Suite (`tests/*`) (55/55 tests passing)
+- [x] Unit & Integration Test Suite (`tests/*`) (56/56 tests passing)
 - [x] Official ERRANT M2 Benchmark Suite & Ablation Runner (`benchmarks/evaluate.py`, `benchmarks/run_ablations.py`)
 - [x] Labelled Datasets (`data/bea19_dev_sample.m2`, `data/conll14_test_sample.m2`, `data/sample_benchmark.jsonl`)
 - [x] Trained Model Weights (`data/models/ngram_bigram.json`, `data/models/edit_router.joblib`)

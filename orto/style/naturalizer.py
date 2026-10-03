@@ -56,14 +56,52 @@ class StyleNaturalizer:
         if not text or not text.strip():
             return text
 
-        analysis: StyleAnalysisResult = self.analyzer.analyze(text)
+        # 1. Attempt LLM-powered dynamic naturalization if available
+        if not self.llm_client.mock_mode and self.llm_client._openai_client is not None:
+            cache_key = self.llm_client._get_cache_key(text, mode="humanize")
+            if cache_key in self.llm_client._cache:
+                cached = self.llm_client._cache[cache_key]
+                if isinstance(cached, str) and cached.strip():
+                    return cached.strip()
 
-        # If text is already natural with no clichés, return unchanged
-        if (
-            analysis.report.naturalness_grade == "Natural"
-            and analysis.report.cliche_count == 0
-        ):
-            return text
+            prompt = f"""Target Text:
+"{text}"
+
+Task:
+Re-rhythm and humanize this text.
+1. Eliminate robotic, synthetic phrases and AI tropes (e.g., "by construction", "is defined by", "delve", "tapestry", "crucial", "testament to", "gates on", "surface that instead", etc.).
+2. Vary sentence lengths with natural human burstiness (mix punchy short statements with clear explanatory sentences).
+3. Transform stiff passive or repetitive copular chains ("X is Y. A is B.") into vivid, active, organic prose.
+4. Maintain 100% of the factual accuracy, technical concepts, and logical points of the original author.
+5. Return ONLY the rewritten text without conversational preamble or markdown backticks.
+"""
+            try:
+                response = self.llm_client._openai_client.chat.completions.create(
+                    model=self.llm_client.model,
+                    temperature=0.3,
+                    max_tokens=1000,
+                    seed=self.llm_client.seed,
+                    messages=[
+                        {"role": "system", "content": NATURALIZER_SYSTEM_PROMPT},
+                        {"role": "user", "content": prompt},
+                    ],
+                )
+                output_text = (response.choices[0].message.content or "").strip()
+                # Clean any outer quotes or code fences
+                if output_text.startswith("```") and output_text.endswith("```"):
+                    output_text = output_text.strip("`").strip()
+                if output_text.startswith('"') and output_text.endswith('"'):
+                    output_text = output_text[1:-1].strip()
+
+                if output_text:
+                    self.llm_client._cache[cache_key] = output_text
+                    self.llm_client._save_cache()
+                    return output_text
+            except Exception:
+                pass
+
+        # 2. Rule-based / Offline Naturalization & De-clichéing
+        analysis: StyleAnalysisResult = self.analyzer.analyze(text)
 
         # Apply surgical cliché substitutions
         result = text
@@ -78,5 +116,23 @@ class StyleNaturalizer:
             end = sugg.span.end_char
             if result[start:end] == sugg.span.original_text:
                 result = result[:start] + sugg.suggestion + result[end:]
+
+        # If no clichés were matched but text has formulaic markers or stiff cadence
+        if result == text:
+            # Apply contextual phrase softening
+            phrase_replacements = [
+                (r"\bis defined by\b", "depends on"),
+                (r"\bby construction\b", "by design"),
+                (r"\bgates on\b", "filters on"),
+                (r"\bfabricated number\b", "arbitrary number"),
+                (r"\bsurface that instead\b", "highlight that instead"),
+                (r"\bserves as a testament to\b", "demonstrates"),
+                (r"\bplays a pivotal role in\b", "is essential for"),
+                (r"\bdelving deep into\b", "exploring"),
+                (r"\brich tapestry of\b", "landscape of"),
+            ]
+            import re
+            for pat, repl in phrase_replacements:
+                result = re.sub(pat, repl, result, flags=re.IGNORECASE)
 
         return result
