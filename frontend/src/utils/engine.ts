@@ -267,23 +267,36 @@ export const RULES: RuleDef[] = [
     },
   },
   {
-    re: /\b(yesterday|last night|last week|last month|last year|last weekend)\s+(?:(i|we|they|he|she|you)\s+)?(goes|go|eats|eat|sees|see|takes|take|makes|make|comes|come|buys|buy|writes|write|drives|drive|runs|run|gives|give|finds|find|knows|know|thinks|think|speaks|speak|meets|meet|pays|pay|says|say|tells|tell|gets|get|reads|read|teaches|teach|catches|catch|drinks|drink|swims|swim|understands|understand|studies|study|works|work|plays|play|walks|walk|arrives|arrive|visits|visit|calls|call|sends|send|loses|lose|leaves|leave|keeps|keep|feels|feel)\b/gid,
-    target: 3,
+    re: /\b(go|goes|see|sees|eat|eats|take|takes|make|makes|come|comes|buy|buys|write|writes|drive|drives|run|runs|give|gives|find|finds|know|knows|think|thinks|speak|speaks|meet|meets|pay|pays|say|says|tell|tells|get|gets|read|reads|teach|teaches|catch|catches|drink|drinks|swim|swims|understand|understands|study|studies|work|works|play|plays|walk|walks|arrive|arrives|visit|visits|call|calls|send|sends|lose|loses|leave|leaves|keep|keeps|feel|feels|bring|brings|spend|spends|sleep|sleeps|stand|stands|wear|wears|win|wins|want|wants|need|needs|like|likes|watch|watches|help|helps|live|lives|start|starts|finish|finishes|move|moves|listen|listens|look|looks|ask|asks|talk|talks|stay|stays|open|opens|close|closes)\b/gid,
+    target: 1,
     build(m) {
-      const [marker, , v] = m.slice(1);
-      if (PAST.has(v.toLowerCase()) || /ed$/i.test(v)) return null;
+      const v = m[1];
+      const text = m.input || '';
+      const hasPastTime = /\b(yesterday|last\s+(?:night|week|month|year|weekend)|(?:two|three|few|\d+)\s+(?:days?|hours?|weeks?|months?|years?)\s+ago|in\s+(?:19\d\d|20[01]\d|202[0-4]))\b/i.test(text);
+      if (!hasPastTime) return null;
+
+      const vStart = m.index;
+      const prefix = text.slice(0, vStart).trim();
+      const lastWord = prefix.split(/\s+/).pop()?.toLowerCase() || '';
+      if (['to', 'can', 'could', 'should', 'would', 'will', 'shall', 'might', 'may', 'must', 'did', "didn't", 'do', "don't", 'does', "doesn't"].includes(lastWord)) {
+        return null;
+      }
+
       const base = toBase(v);
       const past = pastOf(base);
+      if (past.toLowerCase() === v.toLowerCase()) return null;
+
       return {
         type: 'R:VERB:TENSE' as ErrantType,
-        replacement: past,
+        replacement: matchCase(v, past),
         rule: 'Past-Tense Concordance with Temporal Adverbials',
-        exp: `The past-time adverbial “${marker}” anchors the clause to a finished time frame, so the lexical verb must appear in the past tense: “${v}” → “${past}”.`,
+        exp: `The clause contains a past-time adverbial, anchoring the event in a finished timeframe. The finite verb must appear in the past tense: “${v}” → “${past}”.`,
         cf: `I ${v} there every week — habitual present is fine without past time.`,
-        conf: 0.93,
+        conf: 0.98,
       };
     },
   },
+
   {
     re: /\b(can|could|should|would|will|shall|might|may|must|did|does|do|didn't|did\s+not|doesn't|don't)\s+(?:(i|you|he|she|it|we|they|[a-z]+)\s+)?(went|saw|ate|came|took|wrote|bought|found|made|said|told|gave|knew|thought|brought|left|felt|began|ran|broke|chose|drove|fell|forgot|grew|heard|kept|paid|read|sent|slept|spoke|spent|stood|swam|taught|threw|understood|wore|won)\b/gid,
     target: 3,

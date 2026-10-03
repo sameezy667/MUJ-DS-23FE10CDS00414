@@ -239,6 +239,12 @@ class SyntaxEngine:
             t for t in doc
             if t.pos_ in ("VERB", "AUX") and (t.tag_ == "VBD" or t.morph.get("Tense") == ["Past"])
         ]
+        present_verbs = [
+            t for t in doc
+            if t.pos_ in ("VERB", "AUX") and (t.tag_ in ("VBP", "VBZ") or t.morph.get("Tense") == ["Pres"])
+            and not any(c.dep_ == "aux" and c.text.lower() in ("can", "could", "should", "would", "will", "might", "may", "must", "did") for c in t.children)
+            and t.dep_ != "xcomp"
+        ]
         future_aux = [
             t for t in doc
             if t.text.lower() in ("will", "shall") or (t.text.lower() == "going" and any(c.text.lower() == "to" for c in t.children))
@@ -252,10 +258,15 @@ class SyntaxEngine:
                 anomalies.append(
                     f"Temporal discordance: Future adverbial '{t.text}' conflicts with past tense verb(s) {[v.text for v in past_verbs]}"
                 )
-            elif t_low in past_adverbs and future_aux:
-                anomalies.append(
-                    f"Temporal discordance: Past adverbial '{t.text}' conflicts with future auxiliary {[v.text for v in future_aux]}"
-                )
+            elif t_low in past_adverbs:
+                if future_aux:
+                    anomalies.append(
+                        f"Temporal discordance: Past adverbial '{t.text}' conflicts with future auxiliary {[v.text for v in future_aux]}"
+                    )
+                elif present_verbs:
+                    anomalies.append(
+                        f"Temporal discordance: Past adverbial '{t.text}' used with present tense verb(s) {[v.text for v in present_verbs]}"
+                    )
 
         return {
             "sentence_length": len(doc),
@@ -263,4 +274,5 @@ class SyntaxEngine:
             "subject_verb_pairs": sva_pairs,
             "anomalies": anomalies,
         }
+
 

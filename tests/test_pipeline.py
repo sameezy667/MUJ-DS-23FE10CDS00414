@@ -96,3 +96,15 @@ def test_pipeline_modal_auxiliary_and_pronoun(engine: OrtoEngine) -> None:
     assert edits["i"] == "I"
     assert edits["went"] == "go"
 
+
+def test_pipeline_past_adverbial_end_of_sentence(engine: OrtoEngine) -> None:
+    """Tests that a sentence-final past adverbial inflects present verb to past."""
+    text = "i go to the zoo yesterday"
+    resp = engine.analyze(text)
+
+    assert resp.corrected_text == "I went to the zoo yesterday"
+    edits = {e.span.original_text: e.replacement for e in resp.edits}
+    assert edits["i"] == "I"
+    assert edits["go"] == "went"
+
+

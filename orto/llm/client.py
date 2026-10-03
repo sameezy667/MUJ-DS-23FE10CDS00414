@@ -524,7 +524,81 @@ class LLMClient:
                     )
                 )
 
+        # 3B. Past Temporal Adverbial + Present-Tense Verb Discordance (e.g. "i go to the zoo yesterday" -> "went")
+        irreg_past_map = {
+            "go": "went", "goes": "went", "see": "saw", "sees": "saw", "eat": "ate", "eats": "ate",
+            "take": "took", "takes": "took", "make": "made", "makes": "made", "come": "came", "comes": "came",
+            "buy": "bought", "buys": "bought", "write": "wrote", "writes": "wrote", "drive": "drove", "drives": "drove",
+            "run": "ran", "runs": "ran", "give": "gave", "gives": "gave", "find": "found", "finds": "found",
+            "know": "knew", "knows": "knew", "think": "thought", "thinks": "thought", "speak": "spoke", "speaks": "spoke",
+            "meet": "met", "meets": "met", "pay": "paid", "pays": "paid", "say": "said", "says": "said",
+            "tell": "told", "tells": "told", "get": "got", "gets": "got", "read": "read", "reads": "read",
+            "teach": "taught", "teaches": "taught", "catch": "caught", "catches": "caught", "drink": "drank", "drinks": "drank",
+            "swim": "swam", "swims": "swam", "understand": "understood", "understands": "understood",
+            "study": "studied", "studies": "studied", "work": "worked", "works": "worked", "play": "played", "plays": "played",
+            "walk": "walked", "walks": "walked", "arrive": "arrived", "arrives": "arrived", "visit": "visited", "visits": "visited",
+            "call": "called", "calls": "called", "send": "sent", "sends": "sent", "lose": "lost", "loses": "lost",
+            "leave": "left", "leaves": "left", "keep": "kept", "keeps": "kept", "feel": "felt", "feels": "felt",
+            "bring": "brought", "brings": "brought", "spend": "spent", "spends": "spent", "sleep": "slept", "sleeps": "slept",
+            "stand": "stood", "stands": "stood", "wear": "wore", "wears": "wore", "win": "won", "wins": "won",
+            "want": "wanted", "wants": "wanted", "need": "needed", "needs": "needed", "like": "liked", "likes": "liked",
+            "watch": "watched", "watches": "watched", "help": "helped", "helps": "helped", "live": "lived", "lives": "lived",
+            "start": "started", "starts": "started", "finish": "finished", "finishes": "finished",
+            "move": "moved", "moves": "moved", "listen": "listened", "listens": "listened",
+            "look": "looked", "looks": "looked", "ask": "asked", "asks": "asked", "talk": "talked", "talks": "talked",
+            "stay": "stayed", "stays": "stayed", "open": "opened", "opens": "opened", "close": "closed", "closes": "closed",
+        }
+
+        past_anchor_rx = re.compile(
+            r"\b(yesterday|last\s+(?:night|week|month|year|weekend)|(?:two|three|few|\d+)\s+(?:days?|hours?|weeks?|months?|years?)\s+ago|in\s+(?:19\d\d|20[01]\d|202[0-4]))\b",
+            re.IGNORECASE,
+        )
+        past_anchor_match = past_anchor_rx.search(text)
+        if past_anchor_match:
+            anchor_text = past_anchor_match.group(1)
+            verb_keys_sorted = sorted(irreg_past_map.keys(), key=lambda k: -len(k))
+            present_verbs_rx = re.compile(
+                rf"\b({'|'.join(verb_keys_sorted)})\b",
+                re.IGNORECASE,
+            )
+            for v_match in present_verbs_rx.finditer(text):
+                v_start, v_end = v_match.span(1)
+                v_word = v_match.group(1)
+                # Skip if part of the anchor phrase itself
+                if v_start >= past_anchor_match.start() and v_end <= past_anchor_match.end():
+                    continue
+                # Check prefix to avoid infinitive "to go" or modal "can go"
+                prefix = text[:v_start].rstrip()
+                last_prefix_word = prefix.split()[-1].lower() if prefix.split() else ""
+                if last_prefix_word in ("to", "can", "could", "should", "would", "will", "shall", "might", "may", "must", "did", "didn't", "do", "don't", "does", "doesn't"):
+                    continue
+
+                if not any(e.span.start_char == v_start for e in edits):
+                    rep_past = irreg_past_map.get(v_word.lower(), v_word)
+                    if v_word.istitle():
+                        rep_past = rep_past.capitalize()
+                    edits.append(
+                        DiagnosticEdit(
+                            span=SpanCoordinate(
+                                start_char=v_start,
+                                end_char=v_end,
+                                original_text=v_word,
+                            ),
+                            replacement=rep_past,
+                            errant_type="R:VERB:TENSE",
+                            linguistic_rule="Past-Tense Concordance with Temporal Adverbials",
+                            explanation=(
+                                f"The clause contains the past-time adverbial '{anchor_text}', anchoring the action to a completed past timeframe. "
+                                f"The lexical verb '{v_word}' must appear in the past tense ('{rep_past}')."
+                            ),
+                            counterfactual_example=f"I {v_word.lower()} there every week.",
+                            confidence=0.98,
+                            critic_verified=True,
+                        )
+                    )
+
         # 4. Standalone Lowercase Pronoun 'i'
+
         for match in re.finditer(r"\b(i)\b", text):
             start = match.start(1)
             end = match.end(1)
