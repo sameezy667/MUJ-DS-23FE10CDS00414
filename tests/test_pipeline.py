@@ -108,3 +108,21 @@ def test_pipeline_past_adverbial_end_of_sentence(engine: OrtoEngine) -> None:
     assert edits["go"] == "went"
 
 
+def test_pipeline_eat_yesterday_and_multiple_verbs(engine: OrtoEngine) -> None:
+    """Tests eat -> ate and she see -> she saw with past time anchors."""
+    text1 = "i eat a lot yesterday"
+    resp1 = engine.analyze(text1)
+    assert resp1.corrected_text == "I ate a lot yesterday"
+    edits1 = {e.span.original_text: e.replacement for e in resp1.edits}
+    assert edits1["i"] == "I"
+    assert edits1["eat"] == "ate"
+
+    text2 = "she see a movie last night"
+    resp2 = engine.analyze(text2)
+    assert resp2.corrected_text == "She saw a movie last night"
+    edits2 = {e.span.original_text: e.replacement for e in resp2.edits}
+    assert edits2["she"] == "She"
+    assert edits2["see"] == "saw"
+
+
+

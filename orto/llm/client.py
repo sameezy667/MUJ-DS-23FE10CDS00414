@@ -291,89 +291,7 @@ class LLMClient:
         """
         edits: List[DiagnosticEdit] = []
 
-        # 1. Subject-Verb Agreement check from extracted priors
-        sva_pairs = syntax_priors.get("subject_verb_pairs", [])
-        for pair in sva_pairs:
-            subj = pair.get("subject", {})
-            verb = pair.get("verb", {})
-
-            subj_num = subj.get("number")
-            verb_num = verb.get("number")
-            subj_text = subj.get("text", "")
-            verb_text = verb.get("text", "")
-            verb_start = verb.get("start_char", -1)
-            verb_end = verb.get("end_char", -1)
-
-            # Heuristic SVA detection for common irregular/regular verbs
-            if subj_num == "Sing" and verb_num == "Plur" and verb_start >= 0:
-                rep_verb = None
-                if verb_text.lower() == "were":
-                    rep_verb = "was" if verb_text.islower() else "Was"
-                elif verb_text.lower() == "are":
-                    rep_verb = "is" if verb_text.islower() else "Is"
-                elif verb_text.lower() == "have":
-                    rep_verb = "has" if verb_text.islower() else "Has"
-                elif verb_text.lower() == "do":
-                    rep_verb = "does" if verb_text.islower() else "Does"
-                elif not verb_text.endswith("s") and len(verb_text) > 2:
-                    rep_verb = verb_text + "s"
-
-                if rep_verb and text[verb_start:verb_end] == verb_text:
-                    edits.append(
-                        DiagnosticEdit(
-                            span=SpanCoordinate(
-                                start_char=verb_start,
-                                end_char=verb_end,
-                                original_text=verb_text,
-                            ),
-                            replacement=rep_verb,
-                            errant_type="R:VERB:SVA",
-                            linguistic_rule="Subject-Verb Agreement with Intervening Modifiers",
-                            explanation=(
-                                f"The grammatical subject head is '{subj_text}' (singular), but the verb '{verb_text}' "
-                                f"is plural. The verb must agree in number with its subject head."
-                            ),
-                            counterfactual_example=f"The students {verb_text} present at the meeting.",
-                            confidence=0.98,
-                            critic_verified=False,
-                        )
-                    )
-
-            elif subj_num == "Plur" and verb_num == "Sing" and verb_start >= 0:
-                rep_verb = None
-                if verb_text.lower() == "was":
-                    rep_verb = "were" if verb_text.islower() else "Were"
-                elif verb_text.lower() == "is":
-                    rep_verb = "are" if verb_text.islower() else "Are"
-                elif verb_text.lower() == "has":
-                    rep_verb = "have" if verb_text.islower() else "Have"
-                elif verb_text.lower() == "does":
-                    rep_verb = "do" if verb_text.islower() else "Do"
-                elif verb_text.endswith("s") and len(verb_text) > 3:
-                    rep_verb = verb_text[:-1]
-
-                if rep_verb and text[verb_start:verb_end] == verb_text:
-                    edits.append(
-                        DiagnosticEdit(
-                            span=SpanCoordinate(
-                                start_char=verb_start,
-                                end_char=verb_end,
-                                original_text=verb_text,
-                            ),
-                            replacement=rep_verb,
-                            errant_type="R:VERB:SVA",
-                            linguistic_rule="Plural Subject-Verb Agreement",
-                            explanation=(
-                                f"The subject head '{subj_text}' is plural, but the verb '{verb_text}' is singular. "
-                                f"The verb must take the plural form."
-                            ),
-                            counterfactual_example=f"The student {verb_text} present at the meeting.",
-                            confidence=0.98,
-                            critic_verified=False,
-                        )
-                    )
-
-        # 2. Modal Auxiliary + Non-Base Verb Pattern Detection
+        # 1. Modal Auxiliary + Non-Base Verb Pattern Detection
         modal_past_map = {
             "went": "go",
             "saw": "see",
@@ -452,79 +370,7 @@ class LLMClient:
                     )
                 )
 
-        # 3. Temporal Adverbial / Predicate Tense Discordance
-        past_verbs_re = r"(?:went|saw|ate|came|took|wrote|bought|found|made|said|told|gave|knew|thought|brought|left|felt|began|ran|broke|chose|drove|fell|forgot|grew|heard|kept|paid|read|sent|slept|spoke|spent|stood|swam|taught|threw|understood|wore|won|was|were|had|did|[a-z]+ed)"
-        future_adv_rx = re.compile(
-            rf"\b(tomorrow|next\s+week|next\s+month|next\s+year)\b(?=.*?\b{past_verbs_re}\b)",
-            re.IGNORECASE,
-        )
-        for match in future_adv_rx.finditer(text):
-            adv_text = match.group(1)
-            start = match.start(1)
-            end = match.end(1)
-            is_cap = adv_text[0].isupper() or start == 0
-
-            rep = "Yesterday" if is_cap else "yesterday"
-            if "week" in adv_text.lower():
-                rep = "Last week" if is_cap else "last week"
-            elif "month" in adv_text.lower():
-                rep = "Last month" if is_cap else "last month"
-            elif "year" in adv_text.lower():
-                rep = "Last year" if is_cap else "last year"
-
-            if not any(e.span.start_char == start for e in edits):
-                edits.append(
-                    DiagnosticEdit(
-                        span=SpanCoordinate(
-                            start_char=start,
-                            end_char=end,
-                            original_text=adv_text,
-                        ),
-                        replacement=rep,
-                        errant_type="R:OTHER",
-                        linguistic_rule="Temporal Adverbial Agreement",
-                        explanation=(
-                            f"The future temporal adverbial '{adv_text}' conflicts with the past-tense narration. "
-                            f"In minimal-edit GEC, reconciling the time adverbial to '{rep}' restores temporal consistency."
-                        ),
-                        counterfactual_example=f"{adv_text.capitalize()} I will go to the mall.",
-                        confidence=0.97,
-                        critic_verified=True,
-                    )
-                )
-
-        past_adv_rx = re.compile(
-            r"\b(yesterday|last\s+night|last\s+week|last\s+month|last\s+year)\b(?=.*?\b(?:will|shall)\b)",
-            re.IGNORECASE,
-        )
-        for match in past_adv_rx.finditer(text):
-            adv_text = match.group(1)
-            start = match.start(1)
-            end = match.end(1)
-            is_cap = adv_text[0].isupper() or start == 0
-            rep = "Tomorrow" if is_cap else "tomorrow"
-            if not any(e.span.start_char == start for e in edits):
-                edits.append(
-                    DiagnosticEdit(
-                        span=SpanCoordinate(
-                            start_char=start,
-                            end_char=end,
-                            original_text=adv_text,
-                        ),
-                        replacement=rep,
-                        errant_type="R:OTHER",
-                        linguistic_rule="Temporal Adverbial Agreement",
-                        explanation=(
-                            f"The past temporal adverbial '{adv_text}' conflicts with the future modal auxiliary. "
-                            f"Reconciling the adverbial to '{rep}' restores temporal agreement."
-                        ),
-                        counterfactual_example=f"{adv_text.capitalize()} I went to the store.",
-                        confidence=0.97,
-                        critic_verified=True,
-                    )
-                )
-
-        # 3B. Past Temporal Adverbial + Present-Tense Verb Discordance (e.g. "i go to the zoo yesterday" -> "went")
+        # 2. Past Temporal Adverbial + Present-Tense Verb Discordance (e.g. "i eat a lot yesterday" -> "ate")
         irreg_past_map = {
             "go": "went", "goes": "went", "see": "saw", "sees": "saw", "eat": "ate", "eats": "ate",
             "take": "took", "takes": "took", "make": "made", "makes": "made", "come": "came", "comes": "came",
@@ -596,6 +442,175 @@ class LLMClient:
                             critic_verified=True,
                         )
                     )
+
+        # 3. Future Temporal Adverbial / Predicate Tense Discordance
+        past_verbs_re = r"(?:went|saw|ate|came|took|wrote|bought|found|made|said|told|gave|knew|thought|brought|left|felt|began|ran|broke|chose|drove|fell|forgot|grew|heard|kept|paid|read|sent|slept|spoke|spent|stood|swam|taught|threw|understood|wore|won|was|were|had|did|[a-z]+ed)"
+        future_adv_rx = re.compile(
+            rf"\b(tomorrow|next\s+week|next\s+month|next\s+year)\b(?=.*?\b{past_verbs_re}\b)",
+            re.IGNORECASE,
+        )
+        for match in future_adv_rx.finditer(text):
+            adv_text = match.group(1)
+            start = match.start(1)
+            end = match.end(1)
+            is_cap = adv_text[0].isupper() or start == 0
+
+            rep = "Yesterday" if is_cap else "yesterday"
+            if "week" in adv_text.lower():
+                rep = "Last week" if is_cap else "last week"
+            elif "month" in adv_text.lower():
+                rep = "Last month" if is_cap else "last month"
+            elif "year" in adv_text.lower():
+                rep = "Last year" if is_cap else "last year"
+
+            if not any(e.span.start_char == start for e in edits):
+                edits.append(
+                    DiagnosticEdit(
+                        span=SpanCoordinate(
+                            start_char=start,
+                            end_char=end,
+                            original_text=adv_text,
+                        ),
+                        replacement=rep,
+                        errant_type="R:OTHER",
+                        linguistic_rule="Temporal Adverbial Agreement",
+                        explanation=(
+                            f"The future temporal adverbial '{adv_text}' conflicts with the past-tense narration. "
+                            f"In minimal-edit GEC, reconciling the time adverbial to '{rep}' restores temporal consistency."
+                        ),
+                        counterfactual_example=f"{adv_text.capitalize()} I will go to the mall.",
+                        confidence=0.97,
+                        critic_verified=True,
+                    )
+                )
+
+        past_adv_future_rx = re.compile(
+            r"\b(yesterday|last\s+night|last\s+week|last\s+month|last\s+year)\b(?=.*?\b(?:will|shall)\b)",
+            re.IGNORECASE,
+        )
+        for match in past_adv_future_rx.finditer(text):
+            adv_text = match.group(1)
+            start = match.start(1)
+            end = match.end(1)
+            is_cap = adv_text[0].isupper() or start == 0
+            rep = "Tomorrow" if is_cap else "tomorrow"
+            if not any(e.span.start_char == start for e in edits):
+                edits.append(
+                    DiagnosticEdit(
+                        span=SpanCoordinate(
+                            start_char=start,
+                            end_char=end,
+                            original_text=adv_text,
+                        ),
+                        replacement=rep,
+                        errant_type="R:OTHER",
+                        linguistic_rule="Temporal Adverbial Agreement",
+                        explanation=(
+                            f"The past temporal adverbial '{adv_text}' conflicts with the future modal auxiliary. "
+                            f"Reconciling the adverbial to '{rep}' restores temporal agreement."
+                        ),
+                        counterfactual_example=f"{adv_text.capitalize()} I went to the store.",
+                        confidence=0.97,
+                        critic_verified=True,
+                    )
+                )
+
+        # 4. Subject-Verb Agreement check from extracted priors
+        sva_pairs = syntax_priors.get("subject_verb_pairs", [])
+        for pair in sva_pairs:
+            if not pair.get("agreement_mismatch"):
+                continue
+
+            subj = pair.get("subject", {})
+            verb = pair.get("verb", {})
+
+            subj_num = subj.get("number")
+            verb_num = verb.get("number")
+            subj_person = subj.get("person", "3")
+            subj_text = subj.get("text", "")
+            verb_text = verb.get("text", "")
+            verb_start = verb.get("start_char", -1)
+            verb_end = verb.get("end_char", -1)
+
+            if subj_text.lower() in ("i", "you") or subj_person in ("1", "2"):
+                continue
+
+            # Heuristic SVA detection for common irregular/regular verbs
+            if subj_num == "Sing" and verb_start >= 0:
+                rep_verb = None
+                if verb_text.lower() == "were":
+                    rep_verb = "was" if verb_text.islower() else "Was"
+                elif verb_text.lower() == "are":
+                    rep_verb = "is" if verb_text.islower() else "Is"
+                elif verb_text.lower() == "have":
+                    rep_verb = "has" if verb_text.islower() else "Has"
+                elif verb_text.lower() == "do":
+                    rep_verb = "does" if verb_text.islower() else "Does"
+                elif not verb_text.endswith("s") and len(verb_text) > 2:
+                    if verb_text.endswith(("ch", "sh", "ss", "x", "z", "o")):
+                        rep_verb = verb_text + "es"
+                    elif verb_text.endswith("y") and len(verb_text) > 2 and verb_text[-2] not in "aeiou":
+                        rep_verb = verb_text[:-1] + "ies"
+                    else:
+                        rep_verb = verb_text + "s"
+
+                if rep_verb and text[verb_start:verb_end] == verb_text:
+                    if not any(e.span.start_char == verb_start for e in edits):
+                        edits.append(
+                            DiagnosticEdit(
+                                span=SpanCoordinate(
+                                    start_char=verb_start,
+                                    end_char=verb_end,
+                                    original_text=verb_text,
+                                ),
+                                replacement=rep_verb,
+                                errant_type="R:VERB:SVA",
+                                linguistic_rule="Subject-Verb Agreement with Intervening Modifiers",
+                                explanation=(
+                                    f"The grammatical subject head is '{subj_text}' (singular), but the verb '{verb_text}' "
+                                    f"is plural. The verb must agree in number with its subject head."
+                                ),
+                                counterfactual_example=f"The students {verb_text} present at the meeting.",
+                                confidence=0.98,
+                                critic_verified=False,
+                            )
+                        )
+
+            elif subj_num == "Plur" and verb_start >= 0:
+                rep_verb = None
+                if verb_text.lower() == "was":
+                    rep_verb = "were" if verb_text.islower() else "Were"
+                elif verb_text.lower() == "is":
+                    rep_verb = "are" if verb_text.islower() else "Are"
+                elif verb_text.lower() == "has":
+                    rep_verb = "have" if verb_text.islower() else "Have"
+                elif verb_text.lower() == "does":
+                    rep_verb = "do" if verb_text.islower() else "Do"
+                elif verb_text.endswith("s") and len(verb_text) > 3:
+                    rep_verb = verb_text[:-1]
+
+                if rep_verb and text[verb_start:verb_end] == verb_text:
+                    if not any(e.span.start_char == verb_start for e in edits):
+                        edits.append(
+                            DiagnosticEdit(
+                                span=SpanCoordinate(
+                                    start_char=verb_start,
+                                    end_char=verb_end,
+                                    original_text=verb_text,
+                                ),
+                                replacement=rep_verb,
+                                errant_type="R:VERB:SVA",
+                                linguistic_rule="Plural Subject-Verb Agreement",
+                                explanation=(
+                                    f"The subject head '{subj_text}' is plural, but the verb '{verb_text}' is singular. "
+                                    f"The verb must take the plural form."
+                                ),
+                                counterfactual_example=f"The student {verb_text} present at the meeting.",
+                                confidence=0.98,
+                                critic_verified=False,
+                            )
+                        )
+
 
         # 4. Standalone Lowercase Pronoun 'i'
 
