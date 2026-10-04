@@ -6,11 +6,12 @@
 
 from typing import List, Optional
 from orto.llm.client import LLMClient
+from orto.llm.prompts import load_prompts_config
 from orto.style.analyzer import StyleAnalyzer
 from orto.style.schemas import StyleAnalysisResult, StyleRewriteSuggestion
 
 
-NATURALIZER_SYSTEM_PROMPT = """You are Orto's Stylometry & Naturalness Re-Rhythmer.
+DEFAULT_NATURALIZER_SYSTEM_PROMPT = """You are Orto's Stylometry & Naturalness Re-Rhythmer.
 
 Your task is to revise text flagged for synthetic monotony or cliché LLM markers.
 
@@ -20,6 +21,12 @@ STRICT PRINCIPLES:
 3. SEMANTIC FIDELITY: Never alter the author's underlying meaning, facts, or technical accuracy.
 4. SURGICAL PRECISION: Avoid unnecessary rewrites.
 """
+
+_PROMPTS_MAP = load_prompts_config()
+NATURALIZER_SYSTEM_PROMPT: str = _PROMPTS_MAP.get(
+    "naturalizer_system_prompt", DEFAULT_NATURALIZER_SYSTEM_PROMPT
+).strip()
+
 
 
 class StyleNaturalizer:

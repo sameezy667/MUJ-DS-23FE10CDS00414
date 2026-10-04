@@ -5,11 +5,20 @@
 """
 
 import json
-from typing import Any, Dict, List
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
+
 from orto.llm.schemas import DiagnosticEdit
 
-
-SYSTEM_PROMPT = """You are Orto, an expert computational linguist and neurosymbolic Grammatical Error Correction (GEC) diagnostic engine.
+# Default fallback prompt templates in case prompts.yaml is absent
+DEFAULT_SYSTEM_PROMPT = """You are Orto, an expert computational linguist and neurosymbolic Grammatical Error Correction (GEC) diagnostic engine.
 
 Your task is to analyze the user's text, identify genuine grammatical/orthographic errors, and propose minimal, surgical diagnostic edits.
 You MUST output your response strictly as a valid JSON object with the key "edits" containing a list of diagnostic edit objects.
@@ -50,6 +59,71 @@ STRICT OPERATIONAL RULES:
    }
 """
 
+DEFAULT_ANALYSIS_PROMPT_TEMPLATE = """Target Sentence:
+"{text}"
+
+Syntactic Dependency & Morphological Priors:
+{priors_serialized}
+{few_shot_block}
+Instructions:
+Analyze the target sentence for grammatical, spelling, and agreement errors.
+Return your findings strictly conforming to the OrtoAnalysis schema with surgical [start_char, end_char] spans. If the text has no errors, return an empty edits list.
+"""
+
+DEFAULT_REFINEMENT_PROMPT_TEMPLATE = """Your previous diagnostic proposals for the target sentence failed symbolic morphosyntactic verification.
+
+Target Sentence:
+"{original_text}"
+
+Symbolic Critic Violations:
+{failed_text}
+
+Instructions:
+Refine your diagnostic edits to resolve the symbolic critic's violations while preserving minimal character spans and valid grammatical structure. Return the updated OrtoAnalysis schema.
+"""
+
+
+def find_prompts_yaml_path() -> Optional[Path]:
+    """Finds the prompts.yaml configuration file across standard locations."""
+    env_path = os.environ.get("ORTO_PROMPTS_PATH")
+    if env_path and Path(env_path).is_file():
+        return Path(env_path)
+
+    # Check relative to current working directory
+    cwd_path = Path.cwd() / "prompts" / "prompts.yaml"
+    if cwd_path.is_file():
+        return cwd_path
+
+    # Check relative to package root
+    pkg_root = Path(__file__).resolve().parent.parent.parent / "prompts" / "prompts.yaml"
+    if pkg_root.is_file():
+        return pkg_root
+
+    return None
+
+
+def load_prompts_config() -> Dict[str, Any]:
+    """Loads prompt templates from YAML file or falls back to defaults."""
+    if yaml is not None:
+        path = find_prompts_yaml_path()
+        if path and path.is_file():
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                    if isinstance(data, dict):
+                        return data
+            except Exception:
+                pass
+    return {
+        "system_prompt": DEFAULT_SYSTEM_PROMPT,
+        "analysis_prompt_template": DEFAULT_ANALYSIS_PROMPT_TEMPLATE,
+        "refinement_prompt_template": DEFAULT_REFINEMENT_PROMPT_TEMPLATE,
+    }
+
+
+_PROMPTS_DATA = load_prompts_config()
+SYSTEM_PROMPT: str = _PROMPTS_DATA.get("system_prompt", DEFAULT_SYSTEM_PROMPT).strip()
+
 
 def build_analysis_prompt(
     text: str,
@@ -84,16 +158,12 @@ def build_analysis_prompt(
         except Exception:
             few_shot_block = ""
 
-    return f"""Target Sentence:
-"{text}"
-
-Syntactic Dependency & Morphological Priors:
-{priors_serialized}
-{few_shot_block}
-Instructions:
-Analyze the target sentence for grammatical, spelling, and agreement errors.
-Return your findings strictly conforming to the OrtoAnalysis schema with surgical [start_char, end_char] spans. If the text has no errors, return an empty edits list.
-"""
+    template = _PROMPTS_DATA.get("analysis_prompt_template", DEFAULT_ANALYSIS_PROMPT_TEMPLATE)
+    return template.format(
+        text=text,
+        priors_serialized=priors_serialized,
+        few_shot_block=few_shot_block,
+    )
 
 
 def build_refinement_prompt(
@@ -120,14 +190,9 @@ def build_refinement_prompt(
         )
     failed_text = "\n".join(failed_summary)
 
-    return f"""Your previous diagnostic proposals for the target sentence failed symbolic morphosyntactic verification.
+    template = _PROMPTS_DATA.get("refinement_prompt_template", DEFAULT_REFINEMENT_PROMPT_TEMPLATE)
+    return template.format(
+        original_text=original_text,
+        failed_text=failed_text,
+    )
 
-Target Sentence:
-"{original_text}"
-
-Symbolic Critic Violations:
-{failed_text}
-
-Instructions:
-Refine your diagnostic edits to resolve the symbolic critic's violations while preserving minimal character spans and valid grammatical structure. Return the updated OrtoAnalysis schema.
-"""

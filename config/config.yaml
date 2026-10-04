@@ -1,0 +1,19 @@
+# Orto Configuration
+# Model, temperature, classifier thresholds, and artifact paths
+
+model: "openai/gpt-4o-mini"
+temperature: 0.0
+seed: 42
+router_threshold: 0.5
+
+paths:
+  prompts: "prompts/prompts.yaml"
+  edit_router: "data/models/edit_router.joblib"
+  ngram_bigram: "data/models/ngram_bigram.json"
+  llm_cache: "data/cache/llm_cache.json"
+  sample_benchmark: "data/sample_benchmark.jsonl"
+
+pipeline:
+  enable_critic: true
+  enable_ml_filter: false
+  max_refinements: 1

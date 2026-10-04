@@ -61,7 +61,7 @@ def get_default_training_sentences() -> List[str]:
 
 
 def train_and_save_ngram(
-    corpus_path: str = "data/downloads/wi+locness/m2/ABC.train.gold.bea19.m2",
+    corpus_path: str = "data/bea19_train_subset.m2",
     output_path: str = "data/models/ngram_bigram.json",
     order: int = 2,
     k: float = 1.0,
@@ -157,7 +157,7 @@ def main() -> None:
     parser.add_argument(
         "--corpus",
         type=str,
-        default="data/downloads/wi+locness/m2/ABC.train.gold.bea19.m2",
+        default="data/bea19_train_subset.m2",
         help="Path to training M2 or text corpus",
     )
     parser.add_argument(

@@ -2,7 +2,7 @@
 .env
 .env.local
 
-# Python
+# Python runtime & caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,7 +12,16 @@ __pycache__/
 dist/
 build/
 
-# Node
+# Dataset downloads & local LLM caches
+data/downloads/
+data/cache/
+*.tar.gz
+
+# Frontend & Node
 node_modules/
 frontend/dist/
+frontend/node_modules/
+
+# OS & Editor artifacts
 .DS_Store
+*.log
