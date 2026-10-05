@@ -1,11 +1,7 @@
 # Orto — Project Summary One-Pager
 
-**Student Name:** SAMEER DHIR  
-**Registration Number:** 23FE10CDS00414  
-**Branch:** Department of Data Science  
-**Batch:** Batch E  
-**GitHub:** [`@sameezy667`](https://github.com/sameezy667)  
-**Dedicated Submission Repo:** [`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)  
+**Domain:** Natural Language Processing (NLP)  
+**Repository:** [https://github.com/sameezy667/Orto.git](https://github.com/sameezy667/Orto.git)  
 
 ---
 

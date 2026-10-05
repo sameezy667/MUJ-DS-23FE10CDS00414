@@ -1,12 +1,9 @@
-# Batch E — Weekly Progress & Milestone Logs
+# Project Progress & Milestone Logs
 
 ## Project Metadata
 - **Project Title:** Orto — Neurosymbolic Grammatical Error Correction & Diagnostic Engine
-- **Student Name:** SAMEER DHIR
-- **Registration Number:** 23FE10CDS00414
-- **Branch:** Department of Data Science
-- **Batch:** Batch E
-- **Track:** Natural Language Processing (NLP) Capstone
+- **Track:** Natural Language Processing (NLP)
+- **Repository:** [https://github.com/sameezy667/Orto.git](https://github.com/sameezy667/Orto.git)
 
 ---
 

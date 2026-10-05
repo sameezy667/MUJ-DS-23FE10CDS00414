@@ -11,12 +11,8 @@ color: #F8FAFC
 ### Neurosymbolic Grammatical Error Correction & Diagnostic Engine
 #### Universal Dependency Priors, Multi-Provider LLM Fallbacks & Stylometry
 
-**Presenter:** SAMEER DHIR  
-**Registration Number:** 23FE10CDS00414  
-**Branch:** Department of Data Science  
-**Batch:** Batch E  
-**GitHub:** [`@sameezy667`](https://github.com/sameezy667)  
-**Submission Repository:** [`Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)  
+**Domain:** Natural Language Processing (NLP)  
+**Repository:** [https://github.com/sameezy667/Orto.git](https://github.com/sameezy667/Orto.git)  
 
 ---
 

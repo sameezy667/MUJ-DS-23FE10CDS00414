@@ -2,9 +2,7 @@
 
 ## 1. Project Overview
 Orto is a production-grade Neurosymbolic Grammatical Error Correction (GEC) and Diagnostic Engine. It combines Universal Dependency syntactic graph priors, constrained Large Language Model (LLM) structured hypothesis generation, multi-provider model cascading, a guaranteed Universal Linguistic Fallback Engine, symbolic morphosyntactic verification via a Symbolic Critic, non-destructive reverse-offset virtual patching, and stylometric naturalness analysis.
-- **Author:** SAMEER DHIR (Reg No: `23FE10CDS00414`, Branch: Data Science, Batch E)
-- **Primary Development Repo:** `https://github.com/sameezy667/Orto.git`
-- **Submission Mirror Repo:** `https://github.com/sameezy667/Orto_capstone_repo.git` (Created specifically for submission and grading)
+- **Repository:** `https://github.com/sameezy667/Orto.git`
 
 ## 2. Tech Stack
 - **Language & Runtime:** Python 3.10+ (Anaconda/Conda / venv), TypeScript (Frontend).
