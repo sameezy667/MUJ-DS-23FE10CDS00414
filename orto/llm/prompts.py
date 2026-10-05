@@ -22,6 +22,7 @@ DEFAULT_SYSTEM_PROMPT = """You are Orto, an expert computational linguist and ne
 
 Your task is to analyze the user's text, identify genuine grammatical/orthographic errors, and propose minimal, surgical diagnostic edits.
 You MUST output your response strictly as a valid JSON object with the key "edits" containing a list of diagnostic edit objects.
+CRITICAL: Do NOT output conversational reasoning, thinking preambles, or markdown notes outside the JSON object. Begin your response immediately with "{" and end with "}".
 
 STRICT OPERATIONAL RULES:
 1. CONSERVATIVE HIGH PRECISION: Only propose edits for genuine, unambiguous errors in grammar, spelling, agreement, verb form, punctuation, or word choice. If a sentence or clause is already grammatically correct (e.g. "I do not know", "what are you going to do", "I think"), NEVER alter it. Return "edits": [] when no true errors exist.
@@ -67,7 +68,7 @@ Syntactic Dependency & Morphological Priors:
 {few_shot_block}
 Instructions:
 Analyze the target sentence for grammatical, spelling, and agreement errors.
-Return your findings strictly conforming to the OrtoAnalysis schema with surgical [start_char, end_char] spans. If the text has no errors, return an empty edits list.
+Return your findings strictly conforming to the OrtoAnalysis JSON schema with surgical [start_char, end_char] spans. If the text has no errors, return {{"edits": []}}. Output ONLY raw JSON.
 """
 
 DEFAULT_REFINEMENT_PROMPT_TEMPLATE = """Your previous diagnostic proposals for the target sentence failed symbolic morphosyntactic verification.
@@ -79,7 +80,7 @@ Symbolic Critic Violations:
 {failed_text}
 
 Instructions:
-Refine your diagnostic edits to resolve the symbolic critic's violations while preserving minimal character spans and valid grammatical structure. Return the updated OrtoAnalysis schema.
+Refine your diagnostic edits to resolve the symbolic critic's violations while preserving minimal character spans and valid grammatical structure. Return the updated OrtoAnalysis schema as raw JSON.
 """
 
 
@@ -89,12 +90,10 @@ def find_prompts_yaml_path() -> Optional[Path]:
     if env_path and Path(env_path).is_file():
         return Path(env_path)
 
-    # Check relative to current working directory
     cwd_path = Path.cwd() / "prompts" / "prompts.yaml"
     if cwd_path.is_file():
         return cwd_path
 
-    # Check relative to package root
     pkg_root = Path(__file__).resolve().parent.parent.parent / "prompts" / "prompts.yaml"
     if pkg_root.is_file():
         return pkg_root
@@ -195,4 +194,3 @@ def build_refinement_prompt(
         original_text=original_text,
         failed_text=failed_text,
     )
-

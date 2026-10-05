@@ -1,0 +1,32 @@
+graph TD
+    classDef client fill:#312E81,stroke:#6366F1,stroke-width:2px,color:#fff;
+    classDef nlp fill:#064E3B,stroke:#10B981,stroke-width:2px,color:#fff;
+    classDef llm fill:#701A75,stroke:#D946EF,stroke-width:2px,color:#fff;
+    classDef critic fill:#7C2D12,stroke:#F97316,stroke-width:2px,color:#fff;
+    classDef patch fill:#1E293B,stroke:#94A3B8,stroke-width:2px,color:#fff;
+
+    A[User Input Text]:::client --> B[NonDestructiveTokenizer]:::nlp
+    A --> C[spaCy Universal Dependency Parser]:::nlp
+
+    B --> D[Exact Character Coordinates]:::nlp
+    C --> E[Syntactic & Morphological Priors]:::nlp
+
+    E --> F{Invocation Router}:::critic
+    F -->|Complex / Multi-clause| G[LLM Structured Generator]:::llm
+    F -->|Fast / Offline| H[Universal Linguistic Engine]:::nlp
+
+    G --> I[Candidate Diagnostic Edits]:::llm
+    H --> I
+
+    I --> J[Symbolic Critic Regression Verifier]:::critic
+    J -->|SVA / Tree Invariant Passed| K[ML Confidence Reranker]:::critic
+    J -->|Invariant Violation| L[1-Turn Reflection Refinement]:::llm
+    L --> J
+
+    K --> M[Reverse-Offset Virtual Patcher]:::patch
+    M --> N[Corrected Text Output]:::patch
+    M --> O[Pedagogical Diagnostic Cards]:::client
+
+    A --> P[Stylometry Analyzer]:::nlp
+    P --> Q[Burstiness Score & AI Cliché Detector]:::client
+    Q --> R[AI Cadence Naturalizer]:::client

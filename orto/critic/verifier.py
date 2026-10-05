@@ -58,8 +58,8 @@ class SymbolicCritic:
         # 2. Re-parse virtual sentence
         doc = self.syntax_engine.parse(patched_text)
 
-        # 3. Check for orphaned tokens (dep_ == 'dep')
-        orphaned = [t for t in doc if t.dep_ == "dep"]
+        # 3. Check for orphaned tokens (dep_ == 'dep', ignoring pure whitespace tokens)
+        orphaned = [t for t in doc if t.dep_ == "dep" and t.text.strip() != ""]
         if orphaned:
             orphan_details = ", ".join(f"'{t.text}' (idx {t.i})" for t in orphaned)
             return CriticResult(

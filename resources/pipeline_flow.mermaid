@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor User as User / Client
+    participant Syntax as SyntaxEngine (spaCy)
+    participant LLM as LLMClient (Multi-Provider)
+    participant Fallback as UniversalLinguisticEngine
+    participant Critic as SymbolicCritic
+    participant ML as EditClassifier
+    participant Patcher as ReverseOffsetPatcher
+
+    User->>Syntax: Raw Sentence
+    Syntax->>Syntax: Extract Dependency Triples & Morph Features
+    Syntax-->>LLM: Syntactic Priors
+    
+    alt Online LLM Available
+        LLM->>LLM: Structured JSON Decoding
+    else LLM Offline / Credits Exhausted / Fallback
+        LLM->>Fallback: Fast Rule & Morphology Diagnosis
+        Fallback-->>LLM: Fallback Candidate Edits
+    end
+    
+    LLM-->>Critic: Candidate DiagnosticEdits
+    
+    loop For each edit
+        Critic->>Critic: Virtual Patch & Tree Check
+        alt Invariant Violation
+            Critic->>LLM: 1-Turn Reflection (Critic Feedback)
+            LLM-->>Critic: Refined Edits
+        end
+    end
+    
+    Critic-->>ML: Passed & Verified Edits
+    ML->>ML: Extract Features & Calibrate Probability
+    ML-->>Patcher: Filtered & Reranked Edits
+    Patcher->>Patcher: Sort Reverse Offsets & Apply
+    Patcher-->>User: Final Corrected Text + Diagnostic Cards + Telemetry

@@ -94,6 +94,10 @@ class PipelineTelemetry(BaseModel):
         default=True,
         description="True if all retained edits passed symbolic verification",
     )
+    engine_tier: Optional[str] = Field(
+        default="LLM (Primary)",
+        description="Name of the model or engine tier that produced the diagnostic hypothesis",
+    )
 
 
 class OrtoResponse(BaseModel):

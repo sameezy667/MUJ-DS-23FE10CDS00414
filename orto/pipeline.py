@@ -1,6 +1,6 @@
 """
 @file pipeline.py
-@description Main orchestrator coordinating Syntax Engine, LLM Diagnostics, Symbolic Critic, N-Gram Fluency, and ML Router
+@description Main orchestrator coordinating Syntax Engine, LLM Diagnostics, Universal Linguistic Fallback, Symbolic Critic, N-Gram Fluency, and ML Router
 @module orto
 """
 
@@ -8,6 +8,7 @@ import os
 import time
 from typing import List, Optional
 
+from orto.core.linguistic_fallback import UniversalLinguisticEngine
 from orto.core.patcher import ReverseOffsetPatcher
 from orto.core.syntax_engine import SyntaxEngine
 from orto.core.tokenizer import NonDestructiveTokenizer
@@ -27,7 +28,8 @@ class OrtoEngine:
     """
     Main Neurosymbolic GEC and Diagnostic Engine.
     Combines Universal Dependency extraction, constrained LLM diagnostic generation,
-    Symbolic Critic verification, N-gram fluency scoring, and ML Confidence Routing.
+    Universal Linguistic Fallback, Symbolic Critic verification, N-gram fluency scoring,
+    and ML Confidence Routing.
     """
 
     def __init__(
@@ -35,6 +37,7 @@ class OrtoEngine:
         syntax_engine: Optional[SyntaxEngine] = None,
         llm_client: Optional[LLMClient] = None,
         critic: Optional[SymbolicCritic] = None,
+        linguistic_engine: Optional[UniversalLinguisticEngine] = None,
         ml_classifier: Optional[EditConfidenceClassifier] = None,
         invocation_router: Optional[InvocationRouter] = None,
         ngram_model: Optional[NGramLanguageModel] = None,
@@ -49,6 +52,7 @@ class OrtoEngine:
             syntax_engine: spaCy dependency and morphology parser.
             llm_client: Constrained LLM client.
             critic: Symbolic morphosyntax regression verifier.
+            linguistic_engine: Universal linguistic and morphosyntactic fallback engine.
             ml_classifier: Trained ML confidence classifier / reranker.
             invocation_router: Fast symbolic vs LLM invocation router.
             ngram_model: Laplace-smoothed N-gram fluency language model.
@@ -59,6 +63,7 @@ class OrtoEngine:
         self.syntax_engine = syntax_engine or SyntaxEngine()
         self.llm_client = llm_client or LLMClient()
         self.critic = critic or SymbolicCritic(self.syntax_engine)
+        self.linguistic_engine = linguistic_engine or UniversalLinguisticEngine()
         self.enable_critic = enable_critic
         self.enable_ml_filter = enable_ml_filter
         self.max_refinements = max_refinements
@@ -115,15 +120,24 @@ class OrtoEngine:
                     input_tokens=0,
                     refinement_cycles=0,
                     critic_passed=True,
+                    engine_tier="None (Empty)",
                 ),
             )
 
         # Stage 1: Syntactic Prior Extraction
         syntax_priors = self.syntax_engine.extract_priors(text)
 
-        # Stage 2: LLM Diagnostic Hypothesis Generation
+        # Stage 2: LLM Diagnostic Hypothesis Generation with Fallback
         analysis: OrtoAnalysis = self.llm_client.analyze(text, syntax_priors)
-        candidate_edits = analysis.edits
+        candidate_edits: List[DiagnosticEdit] = list(analysis.edits)
+        engine_tier = getattr(self.llm_client, "last_engine_tier", "LLM")
+
+        # Guaranteed Fallback: If LLM returned 0 edits or was bypassed, check Universal Linguistic Engine
+        if not candidate_edits:
+            fallback_analysis = self.linguistic_engine.analyze(text, syntax_priors)
+            if fallback_analysis.edits:
+                candidate_edits = list(fallback_analysis.edits)
+                engine_tier = "Universal Linguistic Engine (Fallback)"
 
         # Validate character offset alignment
         aligned_edits: List[DiagnosticEdit] = []
@@ -164,18 +178,19 @@ class OrtoEngine:
 
             verified_edits = passed_edits
         else:
-            # If critic disabled, mark all aligned edits as unverified
             for edit in aligned_edits:
                 edit.critic_verified = False
             verified_edits = aligned_edits
 
-        # Stage 3B: Trained ML Confidence Classification & Reranking
+        # Stage 3B: Trained ML Confidence Classification & Reranking (with fallback preservation)
         if use_ml and verified_edits:
-            verified_edits = self.ml_classifier.filter_and_rerank(
+            filtered_edits = self.ml_classifier.filter_and_rerank(
                 text=text,
                 edits=verified_edits,
                 syntax_priors=syntax_priors,
             )
+            # Retain critic-verified edits if ML filter would leave no edits
+            verified_edits = filtered_edits if filtered_edits else verified_edits
 
         # Resolve any overlapping spans among verified edits
         final_edits = ReverseOffsetPatcher.filter_conflicts(verified_edits)
@@ -194,5 +209,6 @@ class OrtoEngine:
                 input_tokens=len(text.split()),
                 refinement_cycles=refinement_cycles,
                 critic_passed=len(verified_edits) == len(aligned_edits),
+                engine_tier=engine_tier,
             ),
         )

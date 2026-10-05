@@ -1,12 +1,14 @@
 """
 @file app.py
-@description Streamlit interactive diagnostic frontend with span highlighting, real-time patching, and stylometry
+@description Streamlit interactive diagnostic frontend with span highlighting, model selection, real-time patching, and stylometry
 @module orto/ui
 """
 
 import html
+import os
 import streamlit as st
 
+from orto.core.linguistic_fallback import UniversalLinguisticEngine
 from orto.core.patcher import ReverseOffsetPatcher
 from orto.core.syntax_engine import SyntaxEngine
 from orto.critic.verifier import SymbolicCritic
@@ -66,6 +68,17 @@ st.markdown(
         text-transform: uppercase;
         margin-right: 0.4rem;
     }
+    .tier-badge {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #1E1B4B;
+        color: #A5B4FC;
+        border: 1px solid #6366F188;
+        margin-bottom: 0.8rem;
+    }
     .highlight-span {
         padding: 0.15rem 0.4rem;
         border-radius: 4px;
@@ -117,34 +130,66 @@ CATEGORY_CLASSES = {
 
 
 @st.cache_resource
-def get_engine() -> OrtoEngine:
-    """Singleton cached instance of OrtoEngine."""
+def get_syntax_and_style():
+    """Singleton cached syntax and style modules."""
     syntax_engine = SyntaxEngine()
-    client = LLMClient()
     critic = SymbolicCritic(syntax_engine)
-    return OrtoEngine(syntax_engine=syntax_engine, llm_client=client, critic=critic)
+    linguistic_engine = UniversalLinguisticEngine()
+    style_analyzer = StyleAnalyzer(syntax_engine)
+    style_naturalizer = StyleNaturalizer(style_analyzer)
+    return syntax_engine, critic, linguistic_engine, style_analyzer, style_naturalizer
 
 
-@st.cache_resource
-def get_style_modules():
-    """Singleton cached style analyzer and naturalizer."""
-    syntax_engine = SyntaxEngine()
-    analyzer = StyleAnalyzer(syntax_engine)
-    naturalizer = StyleNaturalizer(analyzer)
-    return analyzer, naturalizer
+syntax_engine, critic, linguistic_engine, style_analyzer, style_naturalizer = get_syntax_and_style()
 
-
-engine = get_engine()
-style_analyzer, style_naturalizer = get_style_modules()
 
 # --- Sidebar Configuration ---
 with st.sidebar:
     st.image("https://img.icons8.com/isometric/100/artificial-intelligence.png", width=64)
     st.markdown("### **Orto Configuration**")
 
-    enable_critic = st.toggle("Enable Symbolic Critic", value=True, help="Enforces morphosyntactic invariant checks (SVA, tree integrity)")
-    enable_style = st.toggle("Enable Stylometry Analysis", value=True, help="Calculates burstiness and detects synthetic AI markers")
-    max_refinements = st.slider("Max Refinement Retries", min_value=0, max_value=3, value=1, help="Number of reflection turns on critic rejection")
+    # Engine & Provider Selector
+    model_choices = {
+        "Auto Cascade (OpenRouter GPT-4o-mini + Free Fallback)": "openai/gpt-4o-mini",
+        "Google Gemini (gemini-2.0-flash)": "google/gemini-2.0-flash-exp:free",
+        "OpenAI (gpt-4o-mini)": "gpt-4o-mini",
+        "Nvidia Nemotron Free": "nvidia/nemotron-3.5-lightning:free",
+        "Qwen 2.5 72B / 3.8B Free": "qwen/qwen3.8-27b:free",
+        "Universal Linguistic Engine (Offline Ultra-Fast)": "offline",
+    }
+    selected_model_label = st.selectbox(
+        "Diagnostic Engine / LLM:",
+        list(model_choices.keys()),
+        index=0,
+        help="Select the active LLM or offline linguistic engine. Automatic cascade fallback is always active to ensure 100% verified responses.",
+    )
+    selected_model = model_choices[selected_model_label]
+
+    # Optional custom API key
+    custom_api_key = st.text_input(
+        "API Key (optional override):",
+        type="password",
+        placeholder="sk-...",
+        help="Leave blank to use environment default (.env)",
+    )
+
+    enable_critic = st.toggle(
+        "Enable Symbolic Critic",
+        value=True,
+        help="Enforces morphosyntactic invariant assertions (SVA, dependency tree integrity)",
+    )
+    enable_style = st.toggle(
+        "Enable Stylometry Analysis",
+        value=True,
+        help="Calculates burstiness and detects synthetic AI markers",
+    )
+    max_refinements = st.slider(
+        "Max Refinement Retries",
+        min_value=0,
+        max_value=3,
+        value=1,
+        help="Number of reflection turns on critic rejection",
+    )
 
     st.markdown("---")
     st.markdown("### **Preset Test Cases**")
@@ -152,9 +197,13 @@ with st.sidebar:
         "Custom Input": "",
         "SVA Intervening Preposition": "The box of old vintage vinyl records were dropped by the movers.",
         "Multiple Orthographic Errors": "She will definately recieve the package untill Friday.",
-        "Article & SVA Error": "A increase in temperature affect on the final chemical reaction.",
-        "Mass Noun Number": "The goverment provides many informations to the public.",
-        "Homophone Confusion": "Their is no doubt that the committee will approve the budget.",
+        "Article & Noun Confusable": "A increase in temperature affect on the final chemical reaction.",
+        "Mass Noun & Quantifier": "The goverment provides many informations to the public.",
+        "Homophone & Agreement": "Their is no doubt that the committee will approve the budget.",
+        "Perfect Aspect Participle": "I have went there three times and saw nothing.",
+        "Prepositional Collocations": "Despite of the bad weather, she is married with a doctor and arrived to London.",
+        "Double Comparatives & Concord": "He is more taller than his brother, and one of my friend are coming today.",
+        "Modal Auxiliary Discordance": "He could went yesterday, but he didn't saw anything.",
         "Synthetic / AI Markers": "Moreover, let us delve into the rich tapestry of modern innovations. It is crucial to foster a beacon of collaboration that underscores our vital role.",
     }
     selected_preset = st.selectbox("Load sample sentence:", list(preset_options.keys()))
@@ -168,20 +217,38 @@ with st.sidebar:
         )
 
 
+# Instantiate engine dynamically based on sidebar settings
+llm_client = LLMClient(
+    api_key=custom_api_key if custom_api_key.strip() else None,
+    model=None if selected_model == "offline" else selected_model,
+    mock_mode=(selected_model == "offline"),
+)
+engine = OrtoEngine(
+    syntax_engine=syntax_engine,
+    llm_client=llm_client,
+    critic=critic,
+    linguistic_engine=linguistic_engine,
+)
+
+
 # --- Main Dashboard ---
 st.markdown("<div class='main-title'>Orto GEC Engine</div>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='subtitle'>Neurosymbolic Grammatical Error Correction with Universal Dependency Priors &amp; Stylometry Analysis</div>",
+    "<div class='subtitle'>Neurosymbolic Grammatical Error Correction with Universal Dependency Priors, Multi-Provider LLM Fallback &amp; Stylometry</div>",
     unsafe_allow_html=True,
 )
 
 # Text Input Area
-default_val = preset_options[selected_preset] if selected_preset != "Custom Input" else "The box of old vintage vinyl records were dropped by the movers."
+default_val = (
+    preset_options[selected_preset]
+    if selected_preset != "Custom Input"
+    else "The box of old vintage vinyl records were dropped by the movers."
+)
 user_input = st.text_area(
     "Enter raw text to diagnose & correct:",
     value=default_val,
     height=110,
-    placeholder="Type or paste English text here...",
+    placeholder="Type or paste any English text here...",
 )
 
 col_run, col_clear = st.columns([1, 5])
@@ -189,7 +256,7 @@ with col_run:
     run_button = st.button("✨ Analyze Text", type="primary", use_container_width=True)
 
 if user_input:
-    # Run pipeline
+    # Run pipeline with fallback guarantee
     response = engine.analyze(
         user_input,
         enable_critic=enable_critic,
@@ -207,6 +274,12 @@ if user_input:
         c3.metric("Refinement Cycles", f"{telemetry.refinement_cycles}")
         c4.metric("Critic Status", "PASSED" if telemetry.critic_passed else "FLAGGED")
 
+        engine_tier_name = getattr(telemetry, "engine_tier", "LLM / Verified Fallback")
+        st.markdown(
+            f"<div class='tier-badge'>⚡ Active Diagnostic Tier: <strong>{html.escape(engine_tier_name)}</strong></div>",
+            unsafe_allow_html=True,
+        )
+
     st.markdown("---")
 
     # Main Tabs: Grammar Diagnostics vs Stylometry
@@ -216,7 +289,7 @@ if user_input:
         st.markdown("### 🔍 **Surgical Diagnostic Spans**")
 
         if not edits:
-            st.success("✅ No grammatical or orthographic errors detected. The text is clean!")
+            st.success("✅ No grammatical or orthographic errors detected. The text is verified clean!")
         else:
             # Build annotated HTML view
             annotated_html = ""
@@ -261,10 +334,14 @@ if user_input:
 
                     with st.container():
                         st.markdown("<div class='card'>", unsafe_allow_html=True)
-                        
+
                         header_col, toggle_col = st.columns([4, 1])
                         with header_col:
-                            critic_badge = "🛡️ <span style='color: #10B981; font-weight:600;'>Critic Verified</span>" if edit.critic_verified else "⚠️ <span style='color: #F59E0B;'>Unchecked</span>"
+                            critic_badge = (
+                                "🛡️ <span style='color: #10B981; font-weight:600;'>Critic Verified</span>"
+                                if edit.critic_verified
+                                else "⚠️ <span style='color: #F59E0B;'>Unchecked</span>"
+                            )
                             st.markdown(
                                 f"<span class='errant-pill {cls_name}'>{edit.errant_type}</span> "
                                 f"<strong>{edit.linguistic_rule}</strong> &nbsp;|&nbsp; {critic_badge}",
@@ -297,7 +374,6 @@ if user_input:
 
             with col_preview:
                 st.markdown("### ✍️ **Dynamic Corrected Output**")
-                # In-memory dynamic patching based on user accepted selection
                 dynamically_corrected = ReverseOffsetPatcher.patch(
                     user_input,
                     sorted_edits,
