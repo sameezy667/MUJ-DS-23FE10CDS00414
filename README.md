@@ -12,17 +12,20 @@
 > **Official Capstone Submission Repository Notice**  
 > This repository ([`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)) is an exact submission mirror of the original personal development repository ([`sameezy667/Orto`](https://github.com/sameezy667/Orto.git)), created and frozen specifically for academic submission, evaluation, and faculty grading.
 
-## 📋 Capstone Project Submission Details (Batch F)
+## 📋 Capstone Project Submission Details
 
 | Field | Details |
 |---|---|
 | **Project Title** | **Orto: Neurosymbolic Grammatical Error Correction & Diagnostic Engine** |
-| **Student GitHub** | [`@sameezy667`](https://github.com/sameezy667) |
-| **Original Development Repo** | [`sameezy667/Orto`](https://github.com/sameezy667/Orto.git) |
-| **Dedicated Capstone Submission Repo** | [`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git) |
-| **Batch** | **Batch F** |
-| **Track** | Natural Language Processing (NLP) Capstone |
-| **Evaluation Scope** | 12 Project Steps, Neurosymbolic Engine, 65/65 Verified Tests |
+| **Name** | **SAMEER DHIR** |
+| **Registration Number** | **23FE10CDS00414** |
+| **Branch** | **Data Science** |
+| **Batch** | **Batch E** |
+| **GitHub Username** | [`@sameezy667`](https://github.com/sameezy667) |
+| **Training Program Details** | *(Blank)* |
+| **Original Development Repo** | [`https://github.com/sameezy667/Orto.git`](https://github.com/sameezy667/Orto.git) |
+| **Dedicated Capstone Submission Repo** | [`https://github.com/sameezy667/Orto_capstone_repo.git`](https://github.com/sameezy667/Orto_capstone_repo.git) |
+| **Evaluation Scope** | 12 Project Lifecycle Steps, Neurosymbolic Engine, 65/65 Verified Tests |
 
 ---
 

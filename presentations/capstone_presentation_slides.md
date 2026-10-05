@@ -11,8 +11,12 @@ color: #F8FAFC
 ### Neurosymbolic Grammatical Error Correction & Diagnostic Engine
 #### Universal Dependency Priors, Multi-Provider LLM Fallbacks & Stylometry
 
-**Batch:** Batch F — Natural Language Processing Capstone  
-**Department:** Data Science & Computer Science  
+**Presenter:** SAMEER DHIR  
+**Registration Number:** 23FE10CDS00414  
+**Branch:** Department of Data Science  
+**Batch:** Batch E  
+**GitHub:** [`@sameezy667`](https://github.com/sameezy667)  
+**Submission Repository:** [`Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)  
 
 ---
 
