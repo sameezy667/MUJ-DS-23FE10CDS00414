@@ -1,5 +1,7 @@
 # Capstone System Architecture Specification
 
+![System Architecture](../resources/system_architecture.png)
+
 ## 1. Architectural Layers
 
 ### A. Linguistic & Syntax Layer (`orto/core/`)

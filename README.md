@@ -8,6 +8,22 @@
 
 ---
 
+## 📋 Capstone Project Submission Details
+
+| Field | Details |
+|---|---|
+| **Project Title** | **Orto: Neurosymbolic Grammatical Error Correction & Diagnostic Engine** |
+| **Student Name** | **SAMEER DHIR** |
+| **Registration Number** | **23FE10CDS00414** |
+| **Branch** | **Department of Data Science** |
+| **Batch** | **Batch E** |
+| **GitHub Username** | [`@sameezy667`](https://github.com/sameezy667) |
+| **Capstone Submission Repo** | [`https://github.com/sameezy667/MUJ-DS-23FE10CDS00414.git`](https://github.com/sameezy667/MUJ-DS-23FE10CDS00414.git) |
+| **Presentation Deck (PDF)** | [`presentations/Orto_Presentation_Slides.pdf`](presentations/Orto_Presentation_Slides.pdf) |
+| **Evaluation Scope** | 12 Project Lifecycle Steps, Neurosymbolic Engine, 65/65 Verified Tests |
+
+---
+
 ## 🌟 Executive Overview
 **Orto** is a production-grade, explainable, neurosymbolic Grammatical Error Correction (GEC) and diagnostic engine. It bridges the gap between deep linguistic representations and generative Large Language Models by unifying:
 1. **Universal Dependency (UD v2) Syntactic Priors:** Head-dependent syntax trees and morphological features extracted via spaCy.
@@ -20,6 +36,8 @@
 ---
 
 ## 🏗️ System Architecture
+
+![System Architecture](resources/system_architecture.png)
 
 ```
 [User Input Sentence]
