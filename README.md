@@ -10,7 +10,7 @@
 
 > [!IMPORTANT]
 > **Official Capstone Submission Repository Notice**  
-> This repository ([`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)) is an exact submission mirror of the original personal development repository ([`sameezy667/Orto`](https://github.com/sameezy667/Orto.git)), created and frozen specifically for academic submission, evaluation, and faculty grading.
+> This repository ([`sameezy667/MUJ-DS-23FE10CDS00414`](https://github.com/sameezy667/MUJ-DS-23FE10CDS00414.git)) is an exact submission mirror of the original personal development repository ([`sameezy667/Orto`](https://github.com/sameezy667/Orto.git)), created and frozen specifically for academic submission, evaluation, and faculty grading.
 
 ## 📋 Capstone Project Submission Details
 
@@ -23,8 +23,8 @@
 | **Batch** | **Batch E** |
 | **GitHub Username** | [`@sameezy667`](https://github.com/sameezy667) |
 | **Training Program Details** | *(Blank)* |
-| **Original Development Repo** | [`https://github.com/sameezy667/Orto.git`](https://github.com/sameezy667/Orto.git) |
-| **Dedicated Capstone Submission Repo** | [`https://github.com/sameezy667/Orto_capstone_repo.git`](https://github.com/sameezy667/Orto_capstone_repo.git) |
+| **Personal Development Repo** | [`https://github.com/sameezy667/Orto.git`](https://github.com/sameezy667/Orto.git) |
+| **Capstone Submission Repo** | [`https://github.com/sameezy667/MUJ-DS-23FE10CDS00414.git`](https://github.com/sameezy667/MUJ-DS-23FE10CDS00414.git) |
 | **Evaluation Scope** | 12 Project Lifecycle Steps, Neurosymbolic Engine, 65/65 Verified Tests |
 
 ---
