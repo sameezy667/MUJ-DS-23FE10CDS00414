@@ -4,6 +4,8 @@
 - **Project Title:** Orto: Neurosymbolic Grammatical Error Correction & Diagnostic Engine
 - **Batch:** Batch F
 - **Domain:** Natural Language Processing (NLP)
+- **Original Repository:** [https://github.com/sameezy667/Orto.git](https://github.com/sameezy667/Orto.git)
+- **Submission Repository Mirror:** [https://github.com/sameezy667/Orto_capstone_repo.git](https://github.com/sameezy667/Orto_capstone_repo.git) (Created specifically for evaluation & grading)
 
 ---
 

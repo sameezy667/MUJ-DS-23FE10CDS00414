@@ -8,19 +8,21 @@
 
 ---
 
+> [!IMPORTANT]
+> **Official Capstone Submission Repository Notice**  
+> This repository ([`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git)) is an exact submission mirror of the original personal development repository ([`sameezy667/Orto`](https://github.com/sameezy667/Orto.git)), created and frozen specifically for academic submission, evaluation, and faculty grading.
+
 ## 📋 Capstone Project Submission Details (Batch F)
 
 | Field | Details |
 |---|---|
 | **Project Title** | **Orto: Neurosymbolic Grammatical Error Correction & Diagnostic Engine** |
-| **Student Name** | *[Student Name]* |
-| **Registration Number** | *MUJ-DS-229301XXX* |
-| **Branch / Department** | Department of Data Science / Computer Science & Engineering |
+| **Student GitHub** | [`@sameezy667`](https://github.com/sameezy667) |
+| **Original Development Repo** | [`sameezy667/Orto`](https://github.com/sameezy667/Orto.git) |
+| **Dedicated Capstone Submission Repo** | [`sameezy667/Orto_capstone_repo`](https://github.com/sameezy667/Orto_capstone_repo.git) |
 | **Batch** | **Batch F** |
-| **Training Program** | Natural Language Processing (NLP) Capstone Project |
-| **GitHub Username** | *[GitHub Username]* |
-| **Personal Repository** | `MUJ-DS-RegNo` |
-| **Capstone Repository** | `Orto` |
+| **Track** | Natural Language Processing (NLP) Capstone |
+| **Evaluation Scope** | 12 Project Steps, Neurosymbolic Engine, 65/65 Verified Tests |
 
 ---
 
